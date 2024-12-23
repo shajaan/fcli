@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.12.0](https://github.com/fortify/fcli/compare/v2.11.1...v2.12.0) (2024-12-23)
+
+
+### Features
+
+* `fcli fod dast setup-website`, `fcli fod dast setup-workflow`, `fcli fod dast setup-api`: Add `--vpn` option for specifying Fortify Connect network name (site-to-site VPN) to use (fixes [#644](https://github.com/fortify/fcli/issues/644)) ([8e38b94](https://github.com/fortify/fcli/commit/8e38b9422c880d5aee0191c2289ed235b6483b06))
+* `fcli fod mast setup`, `fcli fod mast get-config`: Updates for new API (fixes [#642](https://github.com/fortify/fcli/issues/642)) ([8e38b94](https://github.com/fortify/fcli/commit/8e38b9422c880d5aee0191c2289ed235b6483b06))
+* `fcli tool sc-client install`: Add options to install compatible JRE ([85bc662](https://github.com/fortify/fcli/commit/85bc662c3a6c1214fd37f92165b40390f01c83ec))
+
+
+### Bug Fixes
+
+* `fcli fod action run release-summary`: Improve/simply based on FoD 24.4 API changes ([8e38b94](https://github.com/fortify/fcli/commit/8e38b9422c880d5aee0191c2289ed235b6483b06))
+* `fcli fod release update`: Add "Retired" option fo `--sdlc-status` (fixes [#642](https://github.com/fortify/fcli/issues/642)) ([8e38b94](https://github.com/fortify/fcli/commit/8e38b9422c880d5aee0191c2289ed235b6483b06))
+* fcli fod action run release-summary update (fixes [#639](https://github.com/fortify/fcli/issues/639)) ([b7e16c4](https://github.com/fortify/fcli/commit/b7e16c495bd50961b3aee1fc34272a981563dd24))
+
 ## [2.11.1](https://github.com/fortify/fcli/compare/v2.11.0...v2.11.1) (2024-12-11)
 
 
