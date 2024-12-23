@@ -25,7 +25,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Comparator;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
@@ -39,6 +43,7 @@ import lombok.SneakyThrows;
 // TODO For now, methods provided in this class are only used by the tools module,
 //      but potentially some methods or the full class could be moved to the common module.
 public final class FileUtils {
+    public static final Set<PosixFilePermission> execPermissions = PosixFilePermissions.fromString("rwxr-xr-x");
     private FileUtils() {}
     
     @SneakyThrows
@@ -106,14 +111,54 @@ public final class FileUtils {
     }
     
     @SneakyThrows
+    public static final void setAllFilePermissions(Path path, Set<PosixFilePermission> permissions, boolean recursive) {
+        if ( path!=null && Files.exists(path) ) {
+            if ( Files.isDirectory(path) ) {
+                try (Stream<Path> walk = Files.walk(path)) {
+                    walk.forEach(p->{
+                        var isDir = Files.isDirectory(p); 
+                        if ( isDir && recursive ) {
+                            setAllFilePermissions(p, permissions, recursive);
+                        } else if ( !isDir ) {
+                            setSinglePathPermissions(p, permissions);
+                        }
+                    });
+                }
+            }
+        }
+    }
+    
+    @SneakyThrows
+    public static final void setSinglePathPermissions(Path p, Set<PosixFilePermission> permissions) {
+        try {
+            Files.setPosixFilePermissions(p, permissions);
+        } catch ( UnsupportedOperationException e ) {
+            // Log warning?
+        }
+    }
+    
+    public static final Function<Path,Path> defaultExtractPathResolver(Path targetPath, Function<Path,Path> sourcePathRewriter) {
+        return sourcePath->{
+            var newSourcePath = sourcePathRewriter==null ? sourcePath : sourcePathRewriter.apply(sourcePath);
+            var resolvedPath = targetPath.resolve(newSourcePath);
+            if (!resolvedPath.startsWith(targetPath.normalize())) {
+                // see: https://snyk.io/research/zip-slip-vulnerability
+                throw new RuntimeException("Entry with an illegal path: " + sourcePath);
+            }
+            return resolvedPath;
+        };
+    }
+    
+    @SneakyThrows
     public static final void extractZip(File zipFile, Path targetDir) {
+        extractZip(zipFile, defaultExtractPathResolver(targetDir, null));
+    }
+    
+    @SneakyThrows
+    public static final void extractZip(File zipFile, Function<Path, Path> extractPathResolver) {
         try (FileInputStream fis = new FileInputStream(zipFile); ZipInputStream zipIn = new ZipInputStream(fis)) {
             for (ZipEntry ze; (ze = zipIn.getNextEntry()) != null; ) {
-                Path resolvedPath = targetDir.resolve(ze.getName()).normalize();
-                if (!resolvedPath.startsWith(targetDir.normalize())) {
-                    // see: https://snyk.io/research/zip-slip-vulnerability
-                    throw new RuntimeException("Entry with an illegal path: " + ze.getName());
-                }
+                Path resolvedPath = extractPathResolver.apply(Path.of(ze.getName())).normalize();
                 if (ze.isDirectory()) {
                     Files.createDirectories(resolvedPath);
                 } else {
@@ -126,13 +171,18 @@ public final class FileUtils {
     
     @SneakyThrows
     public static final void extractTarGZ(File tgzFile, Path targetDir) {
+        extractTarGZ(tgzFile, defaultExtractPathResolver(targetDir, null));
+    }
+    
+    @SneakyThrows
+    public static final void extractTarGZ(File tgzFile, Function<Path,Path> extractPathResolver) {
         try (InputStream source = Files.newInputStream(tgzFile.toPath());
                 GZIPInputStream gzip = new GZIPInputStream(source);
                 TarArchiveInputStream tar = new TarArchiveInputStream(gzip)) {
 
             TarArchiveEntry entry;
             while ((entry = tar.getNextEntry()) != null) {
-                Path extractTo = targetDir.resolve(entry.getName());
+                Path extractTo = extractPathResolver.apply(Path.of(entry.getName()));
                 if(entry.isDirectory()) {
                     Files.createDirectories(extractTo);
                 } else {
