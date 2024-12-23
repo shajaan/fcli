@@ -18,17 +18,13 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import com.fortify.cli.common.crypto.helper.SignatureHelper;
 import com.fortify.cli.common.progress.helper.IProgressWriterI18n;
@@ -47,7 +43,6 @@ import lombok.SneakyThrows;
 
 @Builder
 public final class ToolInstaller {
-    private static final Set<PosixFilePermission> binPermissions = PosixFilePermissions.fromString("rwxr-xr-x");
     @Getter private final String toolName;
     @Getter private final String requestedVersion;
     @Getter private final String defaultPlatform;
@@ -104,7 +99,7 @@ public final class ToolInstaller {
     }
     
     public final Path getGlobalBinPath() {
-        return _globalBinPath.get(()->globalBinPathProvider.apply(this));
+        return _globalBinPath.get(()->globalBinPathProvider==null?null:globalBinPathProvider.apply(this));
     }
     
     public final String getToolVersion() {
@@ -187,7 +182,7 @@ public final class ToolInstaller {
             if ( Files.exists(scriptTargetFilePath) ) {
                 var replacements = getResourceReplacementsMap(globalBinPath.getParent(), scriptTargetFilePath);
                 installResource(resourceFile, globalBinScriptPath, true, replacements);
-                updateFilePermissions(globalBinScriptPath);
+                FileUtils.setSinglePathPermissions(globalBinScriptPath, FileUtils.execPermissions);
             }
         }
     }
@@ -195,7 +190,7 @@ public final class ToolInstaller {
     
     private final ToolInstallationResult install(ToolDefinitionArtifactDescriptor artifactDescriptor) {
         try {
-            preInstallAction.accept(this);
+            if ( preInstallAction!=null ) { preInstallAction.accept(this); }
             var versionDescriptor = getVersionDescriptor();
             warnIfDifferentTargetPath();
             if ( !hasMatchingTargetPath(getVersionDescriptor()) ) {
@@ -203,9 +198,11 @@ public final class ToolInstaller {
                 downloadAndExtract(artifactDescriptor);
             }
             var result = new ToolInstallationResult(toolName, versionDescriptor, artifactDescriptor, createAndSaveInstallationDescriptor());
-            progressWriter.writeProgress("Running post-install actions");
-            postInstallAction.accept(this, result);
-            updateBinPermissions(result.getInstallationDescriptor().getBinPath());
+            if ( postInstallAction!=null ) {
+                progressWriter.writeProgress("Running post-install actions");
+                postInstallAction.accept(this, result);
+            }
+            FileUtils.setAllFilePermissions(result.getInstallationDescriptor().getBinPath(), FileUtils.execPermissions, false);
             writeInstallationInfo(result);
             return result;
         } catch ( IOException e ) {
@@ -285,24 +282,6 @@ public final class ToolInstaller {
         var targetPath = getTargetPath();
         if ( Files.exists(targetPath) && Files.list(targetPath).findFirst().isPresent() ) {
             throw new IllegalStateException("Non-empty target path "+targetPath+" already exists");
-        }
-    }
-    
-    private static final void updateBinPermissions(Path binPath) throws IOException {
-        if ( binPath!=null ) {
-            try (Stream<Path> walk = Files.walk(binPath)) {
-                walk.forEach(ToolInstaller::updateFilePermissions);
-            }
-        }
-    }
-        
-    // TODO Move this method to FileUtils or similar, as it's also used by AbstractToolInstallCommand
-    @SneakyThrows
-    public static final void updateFilePermissions(Path p) {
-        try {
-            Files.setPosixFilePermissions(p, binPermissions);
-        } catch ( UnsupportedOperationException e ) {
-            // Log warning?
         }
     }
     
