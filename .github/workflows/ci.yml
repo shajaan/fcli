@@ -278,6 +278,17 @@ jobs:
           with:
             path: ./artifacts
             name: fcli-linux
+            
+        - name: Set up Docker
+          uses: docker/setup-docker-action@v4
+          with:
+            daemon-config: |
+              {
+                  "debug": true,
+                  "features": {
+                    "containerd-snapshotter": true
+                  }
+              }
     
         - name: Build & test Linux images
           shell: bash
@@ -286,7 +297,7 @@ jobs:
             cd ${DOCKER_SRC}
             for i in scratch alpine ubi9
             do
-              docker build . --target fcli-${i} -t fcli-${i}
+              docker buildx build --target fcli-${i} -t fcli-${i} --attest type=provenance,mode=max --sbom=true .
               mkdir ${PWD}/${i}
               docker run --rm -u $(id -u):$(id -g) -v ${PWD}/${i}:/data fcli-${i} fcli tool sc-client install
               test -f ${PWD}/${i}/fortify/tools/bin/scancentral
