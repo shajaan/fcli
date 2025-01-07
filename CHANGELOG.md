@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.12.1](https://github.com/fortify/fcli/compare/v2.12.0...v2.12.1) (2025-01-07)
+
+
+### Bug Fixes
+
+* `fcli ssc av create`: `--copy-from` option now copies all attribute values (fixes [#666](https://github.com/fortify/fcli/issues/666)) ([5a32f3f](https://github.com/fortify/fcli/commit/5a32f3f842be9164a590ef0c9754fd3ce059ec8c))
+
 ## [2.12.0](https://github.com/fortify/fcli/compare/v2.11.1...v2.12.0) (2024-12-23)
 
 
