@@ -154,13 +154,23 @@ public class SSCAppVersionCreateCommand extends AbstractSSCJsonNodeOutputCommand
         var result = new LinkedHashMap<String,String>();
         var attributes = SSCAppVersionHelper.getAttributes(unirest, descriptor);
         for (JsonNode attr : attributes) {
-            List<String> values = new ArrayList<>();
-            for (JsonNode value: attr.get("values")) {
-                values.add(value.get("guid").textValue());
-            }
+            List<String> values = getAttributeValues(attr);
             result.put(attr.get("attributeDefinitionId").toString(), String.join(";", values));
         }
         return result;
+    }
+
+    private static List<String> getAttributeValues(JsonNode attr) {
+        List<String> values = new ArrayList<>();
+        var value = attr.get("value");
+        if ( value!=null && !value.isNull() ) {
+            values.add(value.asText());
+        } else {
+            for (JsonNode valuesElt: attr.get("values")) {
+                values.add(valuesElt.get("guid").textValue());
+            }
+        }
+        return values;
     }
 
     private SSCAppVersionDescriptor createUncommittedAppVersion(UnirestInstance unirest, SSCAppVersionCopyFromDescriptor copyFromDescriptor) {
