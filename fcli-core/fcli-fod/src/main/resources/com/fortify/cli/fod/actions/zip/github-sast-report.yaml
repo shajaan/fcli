@@ -134,6 +134,9 @@ valueTemplates:
       message: 
         text: ${#cleanIssueDescription(issue.details?.summary)} [More information](${#fod.issueBrowserUrl(issue)})
       level: ${(issue.severityString matches "(Critical|High)") ? "warning":"note" }
+      properties:
+        security-severity: ${{Critical:10.0,High:8.9,Medium:6.9,Low:3.9}.get(issue.severityString)+''}
+        fortify-severity: ${issue.severityString}
       partialFingerprints:
         issueInstanceId: ${issue.instanceId}
       locations:

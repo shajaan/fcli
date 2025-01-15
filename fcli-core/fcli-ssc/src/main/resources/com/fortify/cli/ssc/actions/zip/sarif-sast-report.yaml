@@ -157,6 +157,9 @@ valueTemplates:
       message: 
         text: ${issue.details?.brief} [More information](${#ssc.issueBrowserUrl(issue,parameters.filterset)})
       level: ${(issue.friority matches "(Critical|High)") ? "warning":"note" }
+      properties:
+        security-severity: ${{Critical:10.0,High:8.9,Medium:6.9,Low:3.9}.get(issue.friority)+''}
+        fortify-severity: ${issue.friority}
       partialFingerprints:
         issueInstanceId: ${issue.issueInstanceId}
       locations:
