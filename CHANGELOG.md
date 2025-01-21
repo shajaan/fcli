@@ -1,5 +1,15 @@
 # Changelog
 
+## [2.12.2](https://github.com/fortify/fcli/compare/v2.12.1...v2.12.2) (2025-01-21)
+
+
+### Bug Fixes
+
+* `fcli fod action run github-sast-report`: Add severity data to report ([1e80d5e](https://github.com/fortify/fcli/commit/1e80d5efb483088aaa52b565848a089649aa7133))
+* `fcli fod action run sarif-sast-report`: Add severity data to report ([1e80d5e](https://github.com/fortify/fcli/commit/1e80d5efb483088aaa52b565848a089649aa7133))
+* `fcli ssc action run github-sast-report`: Add severity data to report ([1e80d5e](https://github.com/fortify/fcli/commit/1e80d5efb483088aaa52b565848a089649aa7133))
+* `fcli ssc action run sarif-sast-report`: Add severity data to report ([1e80d5e](https://github.com/fortify/fcli/commit/1e80d5efb483088aaa52b565848a089649aa7133))
+
 ## [2.12.1](https://github.com/fortify/fcli/compare/v2.12.0...v2.12.1) (2025-01-07)
 
 
